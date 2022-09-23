@@ -1,0 +1,400 @@
+<div class="px-4 max-w-[1250px] my-0 mx-auto">
+</div>
+<div class="px-4 max-w-[1000px] my-0 mx-auto">
+{% if cart.item_count > 0 %}
+  <h1 class="text-[38px] font-bold mb-9">Cart</h1>
+
+  
+  
+  <form class="overflow-auto" action="/cart" method="post" novalidate>
+    <table class="table-auto lg:w-[100%] text-left">
+      <thead>
+        <tr>
+          <th class="pb-3">Image</th>
+           <th class="pb-3"> Title </th> 
+          <th class="pb-3">Qty</th>
+          <th class="pb-3 hidden lg:table-row block">total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in cart.items %}
+          <tr id="id_{{ item.id }}">
+            <td class="pb-3 pr-2">
+              <a href="{{ item.url | within: collections.all }}">
+                <img class="w-[136px]" src="{{ item | img_url: 'medium' }}" alt="{{ item.title | escape }}">
+              </a>
+            </td>
+            <td class="pb-3 pr-1">
+              <a href="{{ item.url }}">{{ item.product.title }}</a>
+              {{ item.variant.title }}
+           <div class="pt-2 pb-2" id="item_price_{{ item.key }}">{{ item.price | money }}</div>  
+              <button type="button" class="text-red-600 block capitalize" onClick=(deleteHandle("{{ item.id }}"))>remove</button>
+         
+         
+          </td> 
+            <td class="pb-3 pr-1 w-[70px] sm:w-auto">
+               <svg class="inline-block cursor-pointer hover:opacity-[.5]" xmlns="http://www.w3.org/2000/svg" clip-rule="evenodd" fill-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 24 24" width="18" height="24" onClick=(handlePlus("{{ item.key}}","{{ item.id }}"))><path d="m12.002 2c5.518 0 9.998 4.48 9.998 9.998 0 5.517-4.48 9.997-9.998 9.997-5.517 0-9.997-4.48-9.997-9.997 0-5.518 4.48-9.998 9.997-9.998zm0 1.5c-4.69 0-8.497 3.808-8.497 8.498s3.807 8.497 8.497 8.497 8.498-3.807 8.498-8.497-3.808-8.498-8.498-8.498zm-.747 7.75h-3.5c-.414 0-.75.336-.75.75s.336.75.75.75h3.5v3.5c0 .414.336.75.75.75s.75-.336.75-.75v-3.5h3.5c.414 0 .75-.336.75-.75s-.336-.75-.75-.75h-3.5v-3.5c0-.414-.336-.75-.75-.75s-.75.336-.75.75z" fill-rule="nonzero"/></svg>
+                  <input class="w-4 bg-transparent text-center" type="text" disabled={true} name="updates[]" id="updates_{{ item.key }}" value="{{ item.quantity }}" min="0">
+              <svg class="inline-block cursor-pointer hover:opacity-[.5]" xmlns="http://www.w3.org/2000/svg" width="15" height="24" viewBox="0 0 24 24" onClick=(handleMinus("{{ item.key }}","{{ item.id }}"))><path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm6 13h-12v-2h12v2z"/></svg>
+            </td>
+
+          <td class="pb-3 hidden lg:table-cell">
+              {% if item.original_line_price != item.line_price %}{{ item.original_line_price | money }}{% endif %}
+              <div id="total_price_{{ item.key }}">{{ item.line_price | money }}</div>
+              {% for discount in item.discounts %}{{ discount.title }}{% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="text-right table-auto lg:w-[890px]">
+      <p class="font-medium mb-9">Sub total : <span id="sub_total">{{ cart.total_price | money }}</span></p>
+      <button type="submit" name="checkout" class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-md text-sm px-5 py-2.5 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">Checkout</button>
+
+    </div>
+  </form>
+{% else %}
+  <h2>cart</h2>
+  Cart is empty
+{% endif %}
+</div>
+  
+<script type="text/babel">
+  function deleteHandle(_id){
+  document.getElementById("id_"+_id).remove();
+  let formData = {
+  updates: {
+    [_id]: 0,
+  }};
+  fetch(window.Shopify.routes.root + 'cart/update.js', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(formData)
+  })
+  .then(response => {
+    return (
+  <>
+  response.json();
+  
+  </>
+  )
+  
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+  }
+
+  
+  function handlePlus(id,_id){
+
+
+
+  fetch(window.Shopify.routes.root + 'cart.js', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+})
+.then(response => {
+  return response.json();
+})
+.catch((error) => {
+  console.error('Error:', error);
+});
+  var input = document.getElementById("updates_"+id)
+  let qtyTotal = +input.value
+  let formData = {
+  
+  'id': _id,
+  'quantity': qtyTotal+1
+};
+  fetch(window.Shopify.routes.root + 'cart/change.js', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(formData)
+  })
+  .then(response => {
+  response.json()
+    .then((data) => {
+  document.getElementById("sub_total").innerHTML = "Rs. "+ data.items_subtotal_price/100
+        data?.items.forEach((element)=>{
+          if(element.id==_id){
+            if((element.quantity)>=(qtyTotal+1)){
+              input.value=+input.value+1
+              let total = +((document.getElementById("item_price_"+id).innerHTML).split(" ")[1])
+              document.getElementById("total_price_"+id).innerHTML="Rs. "+(parseFloat(input.value*(+total)).toFixed(2))
+              document.getElementById("count-cart").innerHTML = +(document.getElementById("count-cart").innerHTML) + 1
+            }
+          }
+        })
+    });
+    return response.json();
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+  }
+  function handleMinus(id,_id){
+  var input = document.getElementById("updates_"+id)
+  if(input.value>1){
+  input.value=+input.value-1
+  let qtyTotal = +input.value
+  let total = +((document.getElementById("item_price_"+id).innerHTML).split(" ")[1])
+  document.getElementById("total_price_"+id).innerHTML="Rs. "+((qtyTotal*(+total)).toFixed(2))
+
+  let formData = {
+  updates: {
+    [_id]: qtyTotal,
+  }};
+   fetch(window.Shopify.routes.root + 'cart.js', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+})
+.then(response => {
+  
+  return response.json();
+})
+.catch((error) => {
+  console.error('Error:', error);
+});
+  fetch(window.Shopify.routes.root + 'cart/update.js', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(formData)
+  })
+  .then(response => {
+  response.json()
+    .then((data) => {
+  document.getElementById("sub_total").innerHTML = "Rs. "+ data.items_subtotal_price/100})
+    document.getElementById("count-cart").innerHTML = +(document.getElementById("count-cart").innerHTML) - 1
+    
+    return response.json();
+  })
+  
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+  }
+  }
+</script>
+{% schema %}
+  {
+    "name": "Section name",
+    "settings": []
+  }
+{% endschema %}
+
+{% stylesheet %}
+{% endstylesheet %}
+
+{% javascript %}
+{% endjavascript %}
+ 
+ {% comment %}
+<div class="px-4 max-w-[1000px] my-0 mx-auto">
+{% if cart.item_count > 0 %}
+  <h1 class="text-[38px] font-bold mb-9">Cart</h1>
+  <form class="overflow-auto" action="/cart" method="post" novalidate>
+    <table class="table-auto w-full sm:w-[890px] md:w-[100%] text-left">
+      <thead class="hidden sm:table-header-group">
+        <tr>
+          <th class="pb-3">Image</th>
+           <th class="pb-3"> Title </th>
+          <th class="pb-3">Price</th>
+          <th class="pb-3">Qty</th>
+          <th class="pb-3">total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in cart.items %}
+          <tr id="id_{{ item.id }}" class="flex flex-wrap sm:table-row justify-center">
+            <td class="pb-3 pr-2 w-full sm:w-auto">
+            <span class="font-bold text-gray-800 block sm:hidden text-center">Image</span>
+              <a href="{{ item.url | within: collections.all }}">
+                <img class="w-[136px] h-[100px] mx-auto sm:mx-0" src="{{ item | img_url: 'medium' }}" alt="{{ item.title | escape }}">
+              </a>
+            </td>
+            <td class="pb-3 pr-1 w-full sm:w-auto text-center sm:text-left">
+            <span class="font-bold text-gray-800 block sm:hidden">Title</span>
+              <a href="{{ item.url }}">{{ item.product.title }}</a>
+              {{ item.variant.title }}
+              <button type="button" onClick=(deleteHandle("{{ item.id }}")) class="block text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-md text-sm px-5 py-2.5 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700 mt-2 capitalize mx-auto sm:mx-0">remove</button>
+            </td>
+            <td class="pb-3 pr-6 sm:pr-1">
+          <span class="font-bold text-gray-800 block sm:hidden">Price</span>
+          <div id="item_price_{{ item.key }}">{{ item.price | money }}</div></td>
+            <td class="pb-3 pr-6 sm:pr-1">
+            <span class="font-bold text-gray-800 block sm:hidden">Qty</span>
+<!--               <button class="underline underline-offset-1 hover:opacity-[.67]" type="button" onClick=(handlePlus("{{ item.key}}","{{ item.id }}"))>Plus</button> -->
+              
+<!--                 <svg class="inline-block cursor-pointer hover:opacity-[.67]" height="10pt" viewBox="0 0 426.66667 426.66667" width="12pt" xmlns="http://www.w3.org/2000/svg" onClick=(handlePlus("{{ item.key}}","{{ item.id }}"))>
+                  <path d="m405.332031 192h-170.664062v-170.667969c0-11.773437-9.558594-21.332031-21.335938-21.332031-11.773437 0-21.332031 9.558594-21.332031 21.332031v170.667969h-170.667969c-11.773437 0-21.332031 9.558594-21.332031 21.332031 0 11.777344 9.558594 21.335938 21.332031 21.335938h170.667969v170.664062c0 11.777344 9.558594 21.335938 21.332031 21.335938 11.777344 0 21.335938-9.558594 21.335938-21.335938v-170.664062h170.664062c11.777344 0 21.335938-9.558594 21.335938-21.335938 0-11.773437-9.558594-21.332031-21.335938-21.332031zm0 0"></path></svg> -->
+               <svg class="inline-block cursor-pointer hover:opacity-[.5]" xmlns="http://www.w3.org/2000/svg" clip-rule="evenodd" fill-rule="evenodd" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 24 24" width="18" height="24" onClick=(handlePlus("{{ item.key}}","{{ item.id }}"))><path d="m12.002 2c5.518 0 9.998 4.48 9.998 9.998 0 5.517-4.48 9.997-9.998 9.997-5.517 0-9.997-4.48-9.997-9.997 0-5.518 4.48-9.998 9.997-9.998zm0 1.5c-4.69 0-8.497 3.808-8.497 8.498s3.807 8.497 8.497 8.497 8.498-3.807 8.498-8.497-3.808-8.498-8.498-8.498zm-.747 7.75h-3.5c-.414 0-.75.336-.75.75s.336.75.75.75h3.5v3.5c0 .414.336.75.75.75s.75-.336.75-.75v-3.5h3.5c.414 0 .75-.336.75-.75s-.336-.75-.75-.75h-3.5v-3.5c0-.414-.336-.75-.75-.75s-.75.336-.75.75z" fill-rule="nonzero"/></svg>
+                  <input class="w-4 bg-transparent text-center" type="text" disabled={true} name="updates[]" id="updates_{{ item.key }}" value="{{ item.quantity }}" min="0">
+<!--                <button class="underline underline-offset-1 hover:opacity-[.67]" type="button" onClick=(handleMinus("{{ item.key }}","{{ item.id }}"))>Minus</button> -->
+              
+<!--                   <svg class="inline-block cursor-pointer hover:opacity-[.3]" xmlns="http://www.w3.org/2000/svg" width="12" height="24" viewBox="0 0 24 24" onClick=(handleMinus("{{ item.key }}","{{ item.id }}"))>
+                    <path d="M0 10h24v4h-24z"/></svg> -->
+              <svg class="inline-block cursor-pointer hover:opacity-[.5]" xmlns="http://www.w3.org/2000/svg" width="15" height="24" viewBox="0 0 24 24" onClick=(handleMinus("{{ item.key }}","{{ item.id }}"))><path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm6 13h-12v-2h12v2z"/></svg>
+            </td>
+            <td class="pb-3">
+              <span class="font-bold text-gray-800 block sm:hidden">Total</span>
+              {% if item.original_line_price != item.line_price %}{{ item.original_line_price | money }}{% endif %}
+              <div id="total_price_{{ item.key }}">{{ item.line_price | money }}</div>
+              {% for discount in item.discounts %}{{ discount.title }}{% endfor %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="text-center sm:text-right table-auto sm:w-[890px] md:w-[100%]">
+      <p class="font-medium mb-9">Sub total : <span id="sub_total">{{ cart.total_price | money }}</span></p>
+       
+<!--       <button type="submit" name="update">Update</button> -->
+      <button type="submit" name="checkout" class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-md text-sm px-5 py-2.5 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">Checkout</button>
+<!--       <button type="submit" name="checkout">Checkout</button> -->
+    </div>
+  </form>
+{% else %}
+  <h2>cart</h2>
+  Cart is empty
+{% endif %}
+</div>
+  
+<script type="text/babel">
+  function deleteHandle(_id){
+  document.getElementById("id_"+_id).remove();
+  let formData = {
+  updates: {
+    [_id]: 0,
+  }};
+  fetch(window.Shopify.routes.root + 'cart/update.js', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(formData)
+  })
+  .then(response => {
+    return (
+  <>
+  response.json();
+  
+  </>
+  )
+  
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+  }
+
+  
+  function handlePlus(id,_id){
+
+
+
+  fetch(window.Shopify.routes.root + 'cart.js', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+})
+.then(response => {
+  return response.json();
+})
+.catch((error) => {
+  console.error('Error:', error);
+});
+  var input = document.getElementById("updates_"+id)
+  let qtyTotal = +input.value
+  let formData = {
+  
+  'id': _id,
+  'quantity': qtyTotal+1
+};
+  fetch(window.Shopify.routes.root + 'cart/change.js', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(formData)
+  })
+  .then(response => {
+  response.json()
+    .then((data) => {
+  document.getElementById("sub_total").innerHTML = "Rs. "+ data.items_subtotal_price/100
+        data?.items.forEach((element)=>{
+          if(element.id==_id){
+            if((element.quantity)>=(qtyTotal+1)){
+              input.value=+input.value+1
+              let total = +((document.getElementById("item_price_"+id).innerHTML).split(" ")[1])
+              document.getElementById("total_price_"+id).innerHTML="Rs. "+(parseFloat(input.value*(+total)).toFixed(2))
+              document.getElementById("count-cart").innerHTML = +(document.getElementById("count-cart").innerHTML) + 1
+            }
+          }
+        })
+    });
+    return response.json();
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+  }
+  function handleMinus(id,_id){
+  var input = document.getElementById("updates_"+id)
+  if(input.value>1){
+  input.value=+input.value-1
+  let qtyTotal = +input.value
+  let total = +((document.getElementById("item_price_"+id).innerHTML).split(" ")[1])
+  document.getElementById("total_price_"+id).innerHTML="Rs. "+((qtyTotal*(+total)).toFixed(2))
+
+  let formData = {
+  updates: {
+    [_id]: qtyTotal,
+  }};
+   fetch(window.Shopify.routes.root + 'cart.js', {
+  method: 'GET',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+})
+.then(response => {
+  
+  return response.json();
+})
+.catch((error) => {
+  console.error('Error:', error);
+});
+  fetch(window.Shopify.routes.root + 'cart/update.js', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(formData)
+  })
+  .then(response => {
+  response.json()
+    .then((data) => {
+  document.getElementById("sub_total").innerHTML = "Rs. "+ data.items_subtotal_price/100})
+    document.getElementById("count-cart").innerHTML = +(document.getElementById("count-cart").innerHTML) - 1
+    
+    return response.json();
+  })
+  
+  .catch((error) => {
+    console.error('Error:', error);
+  });
+  }
+  }
+</script> 
+{% endcomment  %}

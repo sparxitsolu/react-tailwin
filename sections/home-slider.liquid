@@ -1,0 +1,38 @@
+<div class="container px-4 max-w-[1250px] my-0 mx-auto">
+  <div class="flex flex-wrap">
+    {% for product in collections[section.settings.featured_col].products limit:4 %}
+    <div class="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 px-2 mb-5">
+       <a href="{{ product.url }}" class="link">
+          <img src="{{ product.featured_image | img_url:'400x' }}" class="card-img-top w-full" alt="{{ product.featured_image.alt }}">
+       </a>
+         <div class="card-body grid place-content-center">
+    <a href="{{ product.url }}" class="link">{{ product.title }}</a> 
+    <small class="text-center">{{ product.price | money_with_currency }}</small>
+  </div> 
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% schema %}
+  {
+    "name": "Home Slider",
+    "settings": [
+      {
+        "type":"collection",
+        "id":"featured_col",
+        "label":"Select Collection"
+      }
+    ],
+    "presets":[
+      {
+        "name":"Home Slider"
+      }
+    ]
+  }
+{% endschema %}
+
+{% stylesheet %}
+{% endstylesheet %}
+
+{% javascript %}
+{% endjavascript %}
